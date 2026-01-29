@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Commodities Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>📦 Commodities Management</h2>
+                <span class="role-badge" id="roleBadge">Manager</span>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="products.html" class="nav-link">Products</a>
+                <button class="theme-btn" id="themeBtn">🌙 Dark</button>
+                <button class="btn btn-danger" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Manager Dashboard</h1>
+        <p class="text-muted">Welcome back! Here's an overview of your commodities.</p>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <h3 id="totalProducts">0</h3>
+                    <p>Total Products</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h3 id="totalValue">$0</h3>
+                    <p>Total Inventory Value</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 id="lowStock">0</h3>
+                    <p>Low Stock Items</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">👤</div>
+                <div class="stat-content">
+                    <h3 id="userEmail">-</h3>
+                    <p>Logged In User</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Products -->
+        <div class="dashboard-section">
+            <h2>Recent Products</h2>
+            <div id="recentProducts" class="products-list">
+                <p class="text-muted">No products yet. <a href="products.html">Add one now</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Check if user is Manager
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!user.role || user.role !== 'manager') {
+                alert('Access Denied! Only Managers can access this page.');
+                window.location.href = 'index.html';
+            }
+            loadDashboardData();
+        });
+
+        function loadDashboardData() {
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            document.getElementById('totalProducts').textContent = products.length;
+            document.getElementById('userEmail').textContent = user.email || '-';
+            
+            const totalValue = products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+            document.getElementById('totalValue').textContent = '$' + totalValue.toFixed(2);
+            
+            const lowStockCount = products.filter(p => p.quantity < 10).length;
+            document.getElementById('lowStock').textContent = lowStockCount;
+
+            // Show recent products
+            const recentList = document.getElementById('recentProducts');
+            if (products.length > 0) {
+                recentList.innerHTML = products.slice(0, 5).map(p => `
+                    <div class="product-item">
+                        <div>
+                            <h4>${p.name}</h4>
+                            <p>Price: $${p.price} | Qty: ${p.quantity}</p>
+                        </div>
+                        <span class="status ${p.quantity < 10 ? 'low' : 'ok'}">
+                            ${p.quantity < 10 ? '⚠️ Low Stock' : '✓ OK'}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
+    </script>
+</body>
+</html>

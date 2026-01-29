@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - Commodities Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="products-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>📦 Commodities Management</h2>
+                <span class="role-badge" id="roleBadge">Manager</span>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link" id="dashboardLink">Dashboard</a>
+                <a href="products.html" class="nav-link active">Products</a>
+                <button class="theme-btn" id="themeBtn">🌙 Dark</button>
+                <button class="btn btn-danger" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="page-header">
+            <h1>Products Management</h1>
+            <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-bar">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="🔍 Search products..." 
+                class="search-input"
+            >
+            <select id="sortBy" class="sort-select">
+                <option value="name">Sort by Name</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="quantity">Quantity</option>
+            </select>
+        </div>
+
+        <!-- Products List -->
+        <div id="productsList" class="products-grid">
+            <p class="text-muted">No products yet. Create one to get started!</p>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Product</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            
+            <form id="productForm" class="product-form">
+                <div class="form-group">
+                    <label for="productName">Product Name *</label>
+                    <input type="text" id="productName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="productCategory">Category *</label>
+                    <select id="productCategory" required>
+                        <option value="">Select category</option>
+                        <option value="Grains">Grains</option>
+                        <option value="Oil">Oil</option>
+                        <option value="Metals">Metals</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Energy">Energy</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productPrice">Price ($) *</label>
+                        <input type="number" id="productPrice" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productQuantity">Quantity *</label>
+                        <input type="number" id="productQuantity" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="productDescription">Description</label>
+                    <textarea id="productDescription" rows="3" placeholder="Enter product description..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let isManager = false;
+        let allProducts = [];
+        let editingId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            isManager = user.role === 'manager';
+            
+            // Hide dashboard link for store keeper
+            if (!isManager) {
+                document.getElementById('dashboardLink').style.display = 'none';
+                document.getElementById('addProductBtn').style.display = 'none';
+            }
+
+            document.getElementById('roleBadge').textContent = user.role === 'manager' ? 'Manager' : 'Store Keeper';
+            
+            loadProducts();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('addProductBtn')?.addEventListener('click', openAddModal);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('cancelBtn').addEventListener('click', closeModal);
+            document.getElementById('productForm').addEventListener('submit', saveProduct);
+            document.getElementById('searchInput').addEventListener('input', filterProducts);
+            document.getElementById('sortBy').addEventListener('change', sortProducts);
+        }
+
+        function loadProducts() {
+            allProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            displayProducts(allProducts);
+        }
+
+        function displayProducts(products) {
+            const list = document.getElementById('productsList');
+            
+            if (products.length === 0) {
+                list.innerHTML = '<p class="text-muted">No products found.</p>';
+                return;
+            }
+
+            list.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <div class="product-header">
+                        <h3>${p.name}</h3>
+                        <span class="category-badge">${p.category}</span>
+                    </div>
+                    <p class="product-description">${p.description || 'No description'}</p>
+                    <div class="product-details">
+                        <div>
+                            <span class="detail-label">Price:</span>
+                            <span class="detail-value">$${p.price}</span>
+                        </div>
+                        <div>
+                            <span class="detail-label">Stock:</span>
+                            <span class="detail-value ${p.quantity < 10 ? 'low' : ''}">${p.quantity}</span>
+                        </div>
+                    </div>
+                    ${isManager ? `
+                        <div class="product-actions">
+                            <button class="btn btn-small btn-primary" onclick="editProduct('${p.id}')">Edit</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteProduct('${p.id}')">Delete</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Add New Product';
+            document.getElementById('productForm').reset();
+            document.getElementById('productModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.remove('show');
+            editingId = null;
+        }
+
+        function editProduct(id) {
+            const product = allProducts.find(p => p.id === id);
+            if (!product) return;
+
+            editingId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Product';
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productCategory').value = product.category;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productQuantity').value = product.quantity;
+            document.getElementById('productDescription').value = product.description;
+            document.getElementById('productModal').classList.add('show');
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+
+            const product = {
+                id: editingId || Date.now().toString(),
+                name: document.getElementById('productName').value,
+                category: document.getElementById('productCategory').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                quantity: parseInt(document.getElementById('productQuantity').value),
+                description: document.getElementById('productDescription').value
+            };
+
+            if (editingId) {
+                const index = allProducts.findIndex(p => p.id === editingId);
+                allProducts[index] = product;
+            } else {
+                allProducts.push(product);
+            }
+
+            localStorage.setItem('products', JSON.stringify(allProducts));
+            closeModal();
+            loadProducts();
+        }
+
+        function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                allProducts = allProducts.filter(p => p.id !== id);
+                localStorage.setItem('products', JSON.stringify(allProducts));
+                loadProducts();
+            }
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allProducts.filter(p => 
+                p.name.toLowerCase().includes(query) ||
+                p.category.toLowerCase().includes(query)
+            );
+            displayProducts(filtered);
+        }
+
+        function sortProducts() {
+            const sortBy = document.getElementById('sortBy').value;
+            const sorted = [...allProducts];
+
+            if (sortBy === 'name') {
+                sorted.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortBy === 'price-asc') {
+                sorted.sort((a, b) => a.price - b.price);
+            } else if (sortBy === 'price-desc') {
+                sorted.sort((a, b) => b.price - a.price);
+            } else if (sortBy === 'quantity') {
+                sorted.sort((a, b) => a.quantity - b.quantity);
+            }
+
+            displayProducts(sorted);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('productModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commodities Management - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Commodities Management</h1>
+            <p class="subtitle">Login to your account</p>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        placeholder="Enter your email" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        placeholder="Enter your password" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" required>
+                        <option value="">Select a role</option>
+                        <option value="manager">Manager</option>
+                        <option value="storekeeper">Store Keeper</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+
+            <div class="demo-credentials">
+                <p><strong>Demo Credentials:</strong></p>
+                <p>📧 Email: demo@test.com</p>
+                <p>🔐 Password: 123456</p>
+                <p>👤 Role: Manager or Store Keeper</p>
+            </div>
+        </div>
+
+        <div class="theme-toggle">
+            <button id="themeBtn" class="theme-btn">🌙 Dark</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
